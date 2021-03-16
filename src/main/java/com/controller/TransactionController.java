@@ -13,6 +13,8 @@ import org.springframework.web.bind.annotation.RequestParam;
 import com.bean.AccountBean;
 import com.dao.AccountCreationDao;
 import com.dao.AccountTypeDao;
+import com.dao.MaintainTransactionDao;
+import com.services.GenerateTransactionNumberService;
 
 @Controller
 public class TransactionController {
@@ -24,6 +26,12 @@ public class TransactionController {
 
 	@Autowired
 	AccountCreationDao accountCreationDao;
+	
+	@Autowired
+	GenerateTransactionNumberService transactionNumber;
+	
+	@Autowired
+	MaintainTransactionDao transactionDao;
 
 	@GetMapping("deposit")
 	public String depositAmount() {
@@ -34,6 +42,14 @@ public class TransactionController {
 	public String amountDeposited(@RequestParam("depositAmount") int depositAmount, HttpSession session) {
 		int user_id = (int) session.getAttribute("user_id");
 		accountCreationDao.depositAmount(depositAmount, user_id);
+		String transactionNumber1 = transactionNumber.getAlphaNumericString(10);
+		List<AccountBean> accountBean = accountCreationDao.getAccountId(user_id);
+		String type = "deposit";
+		for(AccountBean bean : accountBean)
+		{
+			transactionDao.insert(bean, type, depositAmount, transactionNumber1);
+		}
+		
 		return "redirect:/dashboard";
 	}
 
@@ -48,10 +64,18 @@ public class TransactionController {
 		int flag = 0;
 		accountCreationDao.withdrawAmount(withdrawAmount, user_id);
 		List<AccountBean> accountBean = accountCreationDao.getBalance(user_id);
+		List<AccountBean> accountBean1 = accountCreationDao.getAccountId(user_id);
+		String transactionNumber1 = transactionNumber.getAlphaNumericString(10);
+		String type = "withdraw";
+		for(AccountBean bean : accountBean1)
+		{
+			transactionDao.insert(bean, type, withdrawAmount, transactionNumber1);
+		}
 		for (AccountBean bean : accountBean) {
 			System.out.println("Balance is : " + bean.getBalance());
 			if (bean.getBalance() <= 5000) {
 				accountCreationDao.depositAmount(withdrawAmount, user_id);
+				transactionDao.delete(transactionNumber1);
 				flag = 1;
 			}
 		}

@@ -56,5 +56,11 @@ public class AccountCreationDao {
 		List<AccountBean> list = template.query("select *from account where account_number='" + accountNumber + "'", new BeanPropertyRowMapper<AccountBean>(AccountBean.class));
 		return list;
 	}
+	
+	public List<AccountBean> getAccountId(int user_id) {
+		List<AccountBean> list = template.query("select *from account where user_id=" + user_id, new BeanPropertyRowMapper<AccountBean>(AccountBean.class));
+		return list;
+	}
+
 
 }
