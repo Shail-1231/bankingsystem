@@ -9,12 +9,11 @@ import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.ModelAttribute;
-import org.springframework.web.bind.annotation.PathVariable;
+
 import org.springframework.web.bind.annotation.PostMapping;
 import org.springframework.web.bind.annotation.RequestParam;
 import org.springframework.web.multipart.MultipartFile;
 
-import com.bean.AccountBean;
 import com.bean.UserBean;
 import com.bean.UserProfileBean;
 import com.dao.AccountCreationDao;
@@ -69,15 +68,24 @@ public class LoginController {
 	public String loggedIn(@RequestParam("email") String email, @RequestParam("password") String password,
 			HttpSession session) {
 
-		int flag = 0;
 		if (email.equals("admin@admin.com") && password.equals("admin")) {
 			return "redirect:/allusers";
 		}
+
+		UserBean userBean = userInfoDao.getSingleRecordWithEmail(email);
+		System.out.println("S LCOK : " + userBean.getIsLock());
+		if (userBean.getIsLock() == 0) {
+			return "accountlock";
+		}
+		int flag = 0;
 
 		System.out.println("Email : " + email);
 		System.out.println("Password : " + password);
 
 		List<UserBean> list = userInfoDao.getAllUsers();
+
+		userInfoDao.authenticateUser(email, password);
+		userInfoDao.lockAccount(email, password);
 		for (UserBean bean : list) {
 			System.out.println(bean.getEmail());
 			System.out.println(bean.getPassword());
@@ -94,7 +102,7 @@ public class LoginController {
 		}
 
 		else {
-			return "welcome";
+			return "wrongcredentials";
 		}
 
 	}
@@ -107,7 +115,9 @@ public class LoginController {
 	}
 
 	@GetMapping("signuppage") // sign up page for the customer
-	public String signUp() {
+	public String signUp(Model model) {
+
+		model.addAttribute("userInfo", new UserBean());
 		return "signuppage";
 	}
 
@@ -118,6 +128,11 @@ public class LoginController {
 		bean.setIsLock(1);
 		model.addAttribute("userInfo", bean);
 		int id = userInfoDao.insertQuery(bean);
+		if (id == -1) {
+			model.addAttribute("message", "duplicate email ");
+			return "signuppage";
+		}
+		System.out.println("s 127 ");
 		session.setAttribute("user_id", id);
 		System.out.println(bean.getEmail());
 		System.out.println(id);

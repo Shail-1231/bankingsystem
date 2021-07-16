@@ -1,7 +1,7 @@
 CREATE TABLE loan(
 
-	loan_id integer PRIMARY KEY,
-	date_of_request date NOT NULL,
+	loan_id serial PRIMARY KEY,
+	date_of_request timestamp default current_timestamp,
 	user_id integer references user_info(user_id),
 	rate_of_interest integer NOT NULL,
 	approx_emi integer NOT NULL,

@@ -6,13 +6,23 @@
 <html>
 <head>
 <meta charset="ISO-8859-1">
+<jsp:include page="user_assets.jsp"></jsp:include>
 <title>Deposit into Account</title>
 </head>
 <body>
+	<jsp:include page="user_left_side_bar.jsp"></jsp:include>
 
-	<s:form action="deposit" method="post">
+	<div class="container">
+		<div class="content">
+
+			<div class="item">
+				<s:form action="deposit" method="post">
 		Enter deposit amount : <input type="number" name="depositAmount">
-		<input type="submit" value="Deposit Amount">
-	</s:form>
+					<input type="submit" value="Deposit Amount">
+				</s:form>
+			</div>
+		</div>
+	</div>
+	<jsp:include page="user_footer.jsp"></jsp:include>
 </body>
 </html>

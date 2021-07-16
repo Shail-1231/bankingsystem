@@ -19,17 +19,15 @@ import com.services.GenerateTransactionNumberService;
 @Controller
 public class TransactionController {
 
-	
-	
 	@Autowired
 	AccountTypeDao accountDao;
 
 	@Autowired
 	AccountCreationDao accountCreationDao;
-	
+
 	@Autowired
 	GenerateTransactionNumberService transactionNumber;
-	
+
 	@Autowired
 	MaintainTransactionDao transactionDao;
 
@@ -43,13 +41,14 @@ public class TransactionController {
 		int user_id = (int) session.getAttribute("user_id");
 		accountCreationDao.depositAmount(depositAmount, user_id);
 		String transactionNumber1 = transactionNumber.getAlphaNumericString(10);
+		String transactionNumber2 = transactionNumber.getAlphaNumericString(10);
 		List<AccountBean> accountBean = accountCreationDao.getAccountId(user_id);
 		String type = "deposit";
-		for(AccountBean bean : accountBean)
-		{
+		for (AccountBean bean : accountBean) {
+			transactionDao.setTransactionCount(transactionNumber2, bean.getAccountId());
 			transactionDao.insert(bean, type, depositAmount, transactionNumber1);
 		}
-		
+
 		return "redirect:/dashboard";
 	}
 
@@ -65,17 +64,21 @@ public class TransactionController {
 		accountCreationDao.withdrawAmount(withdrawAmount, user_id);
 		List<AccountBean> accountBean = accountCreationDao.getBalance(user_id);
 		List<AccountBean> accountBean1 = accountCreationDao.getAccountId(user_id);
+
 		String transactionNumber1 = transactionNumber.getAlphaNumericString(10);
+		String transactionNumber2 = transactionNumber.getAlphaNumericString(10);
+		String transactionNumber3 = transactionNumber.getAlphaNumericString(10);
 		String type = "withdraw";
-		for(AccountBean bean : accountBean1)
-		{
+		for (AccountBean bean : accountBean1) {
 			transactionDao.insert(bean, type, withdrawAmount, transactionNumber1);
+			transactionDao.setTransactionCount(transactionNumber2, bean.getAccountId());
+			accountCreationDao.chargeAccount(bean.getAccountId(), transactionNumber3);
 		}
 		for (AccountBean bean : accountBean) {
 			System.out.println("Balance is : " + bean.getBalance());
 			if (bean.getBalance() <= 5000) {
-				accountCreationDao.depositAmount(withdrawAmount, user_id);
-				transactionDao.delete(transactionNumber1);
+				accountCreationDao.depositAmount(withdrawAmount + 35, user_id);
+				// transactionDao.delete(transactionNumber1);
 				flag = 1;
 			}
 		}
@@ -100,24 +103,41 @@ public class TransactionController {
 			@RequestParam("transferAmount") int transferAmount, HttpSession session) {
 
 		int user_id = (int) session.getAttribute("user_id");
-		accountCreationDao.withdrawAmount(transferAmount, user_id);
+		AccountBean bean1 = accountCreationDao.getSingleAccount(user_id);
+		if (bean1.getAccountNumber().equals(accountNumber)) {
+			return "redirect:/depositloan";
+		}
 
-		int flag = 0;
-		List<AccountBean> accountBean = accountCreationDao.getBalance(user_id);
-		for (AccountBean bean : accountBean) {
-			System.out.println("Balance is : " + bean.getBalance());
-			if (bean.getBalance() <= 5000) {
-				accountCreationDao.depositAmount(transferAmount, user_id);
-				flag = 1;
+		else {
+			int flag = 0, flag2 = 0;
+			List<AccountBean> list = accountCreationDao.getAllAccount();
+			for (AccountBean obj : list) {
+				if (obj.getAccountNumber().equals(accountNumber)) {
+					flag2 = 1;
+					accountCreationDao.withdrawAmount(transferAmount, user_id);
+					List<AccountBean> accountBean = accountCreationDao.getBalance(user_id);
+					for (AccountBean bean : accountBean) {
+						System.out.println("Balance is : " + bean.getBalance());
+						if (bean.getBalance() <= 5000) {
+							transactionDao.setTransactionCount(transactionNumber.getAlphaNumericString(10),
+									bean.getAccountId());
+							accountCreationDao.depositAmount(transferAmount, user_id);
+							flag = 1;
+						}
+					}
+				}
+			}
+
+			if (flag == 1) {
+				return "errorpagewithdrawal";
+			} else if (flag2 == 0) {
+				return "errorpageaccountnumber";
+			} else {
+				accountCreationDao.transferAmount(accountNumber, transferAmount);
+				return "redirect:/dashboard";
 			}
 		}
 
-		if (flag == 1) {
-			return "errorpagewithdrawal";
-		} else {
-			accountCreationDao.transferAmount(accountNumber, transferAmount);
-			return "redirect:/dashboard";
-		}
 	}
 
 }

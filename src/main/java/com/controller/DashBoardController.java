@@ -22,6 +22,7 @@ public class DashBoardController {
 	@GetMapping("dashboard")
 	public String dashBoard(HttpSession session, Model model) {
 		int user_id = (int) session.getAttribute("user_id");
+		System.out.println(user_id);
 		List<UserBean> user = userInfoDao.getUserById(user_id);
 
 		model.addAttribute("user", user);
